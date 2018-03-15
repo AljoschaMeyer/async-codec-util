@@ -27,7 +27,7 @@ impl<W, C> Encoder<W, C>
           C: AsyncEncodeLen<W>
 {
     /// Return the exact number of bytes this will still write.
-    fn remaining_bytes(&self) -> usize {
+    pub fn remaining_bytes(&self) -> usize {
         self.co.remaining_bytes()
     }
 }
