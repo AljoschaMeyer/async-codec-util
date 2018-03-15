@@ -1,4 +1,4 @@
-use async_codec::AsyncEncode;
+use async_codec::{AsyncEncode, AsyncEncodeLen};
 use futures_core::{Future, Poll};
 use futures_core::Async::{Ready, Pending};
 use futures_core::task::Context;
@@ -19,6 +19,16 @@ impl<W, C> Encoder<W, C> {
             co,
             written: 0,
         }
+    }
+}
+
+impl<W, C> Encoder<W, C>
+    where W: AsyncWrite,
+          C: AsyncEncodeLen<W>
+{
+    /// Return the exact number of bytes this will still write.
+    fn remaining_bytes(&self) -> usize {
+        self.co.remaining_bytes()
     }
 }
 

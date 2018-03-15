@@ -28,3 +28,6 @@ pub fn decode<R, D>(reader: R, dec: D) -> decoder::Decoder<R, D> {
 pub fn encode<W, C>(writer: W, co: C) -> encoder::Encoder<W, C> {
     encoder::Encoder::new(writer, co)
 }
+
+// TODO add Chain for chaining two encoders sequentially
+// TODO add remaining_bytes to encoder future when wrapping an AsyncEncodeLen

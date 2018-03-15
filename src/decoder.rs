@@ -48,21 +48,3 @@ impl<R, D> Future for Decoder<R, D>
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    // TODO
-    // use super::*;
-    //
-    // use atm_io_utils::partial::{PartialOp, PartialRead};
-    // use async_ringbuffer::ring_buffer;
-    //
-    // quickcheck! {
-    //     fn prop(ops: Vec<PartialOp>, data: Vec<u8>) -> bool {
-    //         let (_, r) = ring_buffer(256);
-    //         let r = PartialRead::new(r, ops);
-    //         // let decoder;
-    //         false
-    //     }
-    // }
-}
