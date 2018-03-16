@@ -8,14 +8,6 @@ extern crate futures_io;
 extern crate futures_executor;
 extern crate futures_util;
 
-#[cfg(test)]
-extern crate async_ringbuffer;
-#[cfg(test)]
-extern crate atm_io_utils;
-#[macro_use]
-#[cfg(test)]
-extern crate quickcheck;
-
 mod decoder;
 pub use decoder::Decoder;
 mod encoder;
