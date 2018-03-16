@@ -11,6 +11,8 @@ license = "AGPL-3.0"
 async-codec = "0.1.1"
 futures-core = "0.2.0-alpha"
 futures-io = "0.2.0-alpha"
+futures-executor = "0.2.0-alpha"
+futures-util = "0.2.0-alpha"
 
 [dev-dependencies]
 async-ringbuffer = "0.3.0"
