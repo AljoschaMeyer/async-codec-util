@@ -13,3 +13,9 @@ futures-core = "0.2.0-alpha"
 futures-io = "0.2.0-alpha"
 futures-executor = "0.2.0-alpha"
 futures-util = "0.2.0-alpha"
+
+[dev-dependencies]
+async-byteorder = "0.1.0"
+async-ringbuffer = "0.3.0"
+atm-io-utils = { version = "0.2.4", features = ["quickcheck"] }
+quickcheck = "0.6"

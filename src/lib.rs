@@ -9,6 +9,16 @@ extern crate futures_io;
 extern crate futures_executor;
 extern crate futures_util;
 
+#[cfg(test)]
+extern crate async_byteorder;
+#[cfg(test)]
+extern crate async_ringbuffer;
+#[cfg(test)]
+extern crate atm_io_utils;
+#[cfg(test)]
+#[macro_use(quickcheck)]
+extern crate quickcheck;
+
 pub mod encoder;
 pub mod decoder;
 pub mod testing;
