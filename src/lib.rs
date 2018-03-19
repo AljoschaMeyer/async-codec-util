@@ -3,7 +3,6 @@
 #![deny(missing_docs)]
 
 extern crate async_codec;
-#[macro_use(try_ready)]
 extern crate futures_core;
 extern crate futures_io;
 extern crate futures_executor;
@@ -23,7 +22,7 @@ pub mod encoder;
 pub mod decoder;
 pub mod testing;
 
-use async_codec::{AsyncEncode, AsyncEncodeLen, AsyncDecode, DecodeError};
+use async_codec::{AsyncEncode, AsyncEncodeLen, AsyncDecode, DecodeError, PollEnc, PollDec};
 use futures_core::{Future, Poll};
 use futures_core::Async::{Ready, Pending};
 use futures_core::task::Context;
@@ -37,16 +36,16 @@ pub fn encode<W, C>(writer: W, co: C) -> Encoder<W, C> {
 /// Future for fully encoding an `AsyncEncode` into an `AsyncWrite`.
 pub struct Encoder<W, C> {
     writer: Option<W>,
-    co: C,
+    enc: Option<C>,
     written: usize,
 }
 
 impl<W, C> Encoder<W, C> {
     /// Create a new `Encoder` wrapping an `AsyncWrite` and consuming an `AsyncEncode`.
-    pub fn new(writer: W, co: C) -> Encoder<W, C> {
+    pub fn new(writer: W, enc: C) -> Encoder<W, C> {
         Encoder {
             writer: Some(writer),
-            co,
+            enc: Some(enc),
             written: 0,
         }
     }
@@ -57,8 +56,15 @@ impl<W, C> Encoder<W, C>
           C: AsyncEncodeLen<W>
 {
     /// Return the exact number of bytes this will still write.
-    pub fn remaining_bytes(&self) -> usize {
-        self.co.remaining_bytes()
+    ///
+    /// Panics if called after the future completed.
+    pub fn remaining_bytes(&mut self) -> usize {
+        let enc = self.enc
+            .take()
+            .expect("Used encoder future after completion");
+        let remaining = enc.remaining_bytes();
+        self.enc = Some(enc);
+        remaining
     }
 }
 
@@ -72,19 +78,25 @@ impl<W, C> Future for Encoder<W, C>
     fn poll(&mut self, cx: &mut Context) -> Poll<Self::Item, Self::Error> {
         let mut writer = self.writer
             .take()
-            .expect("Polled future after completion");
-        match self.co.poll_encode(cx, &mut writer) {
-            Ok(Ready(0)) => Ok(Ready((writer, self.written))),
-            Ok(Ready(written)) => {
+            .expect("Polled encoder future after completion");
+        let enc = self.enc
+            .take()
+            .expect("Polled encoder future after completion");
+
+        match enc.poll_encode(cx, &mut writer) {
+            PollEnc::Done => Ok(Ready((writer, self.written))),
+            PollEnc::Progress(enc, written) => {
                 self.written += written;
                 self.writer = Some(writer);
+                self.enc = Some(enc);
                 self.poll(cx)
             }
-            Ok(Pending) => {
+            PollEnc::Pending(enc) => {
                 self.writer = Some(writer);
+                self.enc = Some(enc);
                 Ok(Pending)
             }
-            Err(err) => Err((writer, err)),
+            PollEnc::Errored(err) => Err((writer, err)),
         }
     }
 }
@@ -97,7 +109,7 @@ pub fn decode<R, D>(reader: R, dec: D) -> Decoder<R, D> {
 /// Future for fully decoding an `AsyncDecode` from an `AsyncRead`.
 pub struct Decoder<R, D> {
     reader: Option<R>,
-    dec: D,
+    dec: Option<D>,
     read: usize,
 }
 
@@ -106,7 +118,7 @@ impl<R, D> Decoder<R, D> {
     pub fn new(reader: R, dec: D) -> Decoder<R, D> {
         Decoder {
             reader: Some(reader),
-            dec,
+            dec: Some(dec),
             read: 0,
         }
     }
@@ -122,19 +134,25 @@ impl<R, D> Future for Decoder<R, D>
     fn poll(&mut self, cx: &mut Context) -> Poll<Self::Item, Self::Error> {
         let mut reader = self.reader
             .take()
-            .expect("Polled future after completion");
-        match self.dec.poll_decode(cx, &mut reader) {
-            Ok(Ready((Some(decoded), read))) => Ok(Ready((reader, decoded, self.read + read))),
-            Ok(Ready((None, read))) => {
+            .expect("Polled decoder future after completion");
+        let dec = self.dec
+            .take()
+            .expect("Polled decoder future after completion");
+
+        match dec.poll_decode(cx, &mut reader) {
+            PollDec::Done(item, read) => Ok(Ready((reader, item, self.read + read))),
+            PollDec::Progress(dec, read) => {
                 self.read += read;
                 self.reader = Some(reader);
+                self.dec = Some(dec);
                 self.poll(cx)
             }
-            Ok(Pending) => {
+            PollDec::Pending(dec) => {
                 self.reader = Some(reader);
+                self.dec = Some(dec);
                 Ok(Pending)
             }
-            Err(err) => Err((reader, err)),
+            PollDec::Errored(err) => Err((reader, err)),
         }
     }
 }

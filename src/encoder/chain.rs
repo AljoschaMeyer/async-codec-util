@@ -1,28 +1,22 @@
 use std::marker::PhantomData;
 
-use async_codec::{AsyncEncode, AsyncEncodeLen};
-use futures_core::Poll;
-use futures_core::Async::Ready;
+use async_codec::{AsyncEncode, AsyncEncodeLen, PollEnc};
+use async_codec::PollEnc::{Done, Progress, Pending, Errored};
 use futures_core::task::Context;
-use futures_io::{AsyncWrite, Error as FutIoErr};
+use futures_io::AsyncWrite;
+
+enum State<S, T> {
+    First(S, T),
+    Second(T),
+}
 
 /// Wraps two `AsyncEncode`s and encodes them in sequence.
-pub struct Chain<W, S, T> {
-    first: S,
-    second: T,
-    encode_first: bool,
-    _w: PhantomData<W>,
-}
+pub struct Chain<W, S, T>(State<S, T>, PhantomData<W>);
 
 impl<W, S, T> Chain<W, S, T> {
     /// Create new `Chain` which first encodes the given `S` and then encodes the given `T`.
     pub fn new(first: S, second: T) -> Chain<W, S, T> {
-        Chain {
-            first,
-            second,
-            encode_first: true,
-            _w: PhantomData,
-        }
+        Chain(State::First(first, second), PhantomData)
     }
 }
 
@@ -31,17 +25,40 @@ impl<W, S, T> AsyncEncode<W> for Chain<W, S, T>
           S: AsyncEncode<W>,
           T: AsyncEncode<W>
 {
-    fn poll_encode(&mut self, cx: &mut Context, writer: &mut W) -> Poll<usize, FutIoErr> {
-        if self.encode_first {
-            let written = try_ready!(self.first.poll_encode(cx, writer));
-            if written == 0 {
-                self.encode_first = false;
-                self.poll_encode(cx, writer)
-            } else {
-                Ok(Ready(written))
+    fn poll_encode(mut self, cx: &mut Context, writer: &mut W) -> PollEnc<Self> {
+        match self.0 {
+            State::First(first, second) => {
+                match first.poll_encode(cx, writer) {
+                    Done => {
+                        self.0 = State::Second(second);
+                        self.poll_encode(cx, writer)
+                    }
+                    Progress(first, written) => {
+                        self.0 = State::First(first, second);
+                        Progress(self, written)
+                    }
+                    Pending(first) => {
+                        self.0 = State::First(first, second);
+                        Pending(self)
+                    }
+                    Errored(err) => Errored(err),
+                }
             }
-        } else {
-            self.second.poll_encode(cx, writer)
+
+            State::Second(second) => {
+                match second.poll_encode(cx, writer) {
+                    Done => Done,
+                    Progress(second, written) => {
+                        self.0 = State::Second(second);
+                        Progress(self, written)
+                    }
+                    Pending(second) => {
+                        self.0 = State::Second(second);
+                        Pending(self)
+                    }
+                    Errored(err) => Errored(err),
+                }
+            }
         }
     }
 }
@@ -52,7 +69,12 @@ impl<W, S, T> AsyncEncodeLen<W> for Chain<W, S, T>
           T: AsyncEncodeLen<W>
 {
     fn remaining_bytes(&self) -> usize {
-        self.first.remaining_bytes() + self.second.remaining_bytes()
+        match self.0 {
+            State::First(ref first, ref second) => {
+                first.remaining_bytes() + second.remaining_bytes()
+            }
+            State::Second(ref second) => second.remaining_bytes(),
+        }
     }
 }
 
