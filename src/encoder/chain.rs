@@ -29,9 +29,9 @@ impl<W, S, T> AsyncEncode<W> for Chain<W, S, T>
         match self.0 {
             State::First(first, second) => {
                 match first.poll_encode(cx, writer) {
-                    Done => {
+                    Done(written) => {
                         self.0 = State::Second(second);
-                        self.poll_encode(cx, writer)
+                        Progress(self, written)
                     }
                     Progress(first, written) => {
                         self.0 = State::First(first, second);
@@ -47,7 +47,7 @@ impl<W, S, T> AsyncEncode<W> for Chain<W, S, T>
 
             State::Second(second) => {
                 match second.poll_encode(cx, writer) {
-                    Done => Done,
+                    Done(written) => Done(written),
                     Progress(second, written) => {
                         self.0 = State::Second(second);
                         Progress(self, written)

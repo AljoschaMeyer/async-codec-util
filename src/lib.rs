@@ -84,7 +84,7 @@ impl<W, C> Future for Encoder<W, C>
             .expect("Polled encoder future after completion");
 
         match enc.poll_encode(cx, &mut writer) {
-            PollEnc::Done => Ok(Ready((writer, self.written))),
+            PollEnc::Done(written) => Ok(Ready((writer, self.written + written))),
             PollEnc::Progress(enc, written) => {
                 self.written += written;
                 self.writer = Some(writer);
