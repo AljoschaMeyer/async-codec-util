@@ -8,8 +8,8 @@ extern crate futures_io;
 extern crate futures_executor;
 extern crate futures_util;
 
-// #[cfg(test)]
-// extern crate async_byteorder;
+#[cfg(test)]
+extern crate async_byteorder;
 #[cfg(test)]
 extern crate async_ringbuffer;
 #[cfg(test)]
