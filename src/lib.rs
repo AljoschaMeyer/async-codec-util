@@ -53,7 +53,7 @@ impl<W, C> Encoder<W, C> {
 
 impl<W, C> Encoder<W, C>
     where W: AsyncWrite,
-          C: AsyncEncodeLen<W>
+          C: AsyncEncodeLen
 {
     /// Return the exact number of bytes this will still write.
     ///
@@ -70,7 +70,7 @@ impl<W, C> Encoder<W, C>
 
 impl<W, C> Future for Encoder<W, C>
     where W: AsyncWrite,
-          C: AsyncEncode<W>
+          C: AsyncEncode
 {
     type Item = (W, usize);
     type Error = (W, FutIoErr);
@@ -126,7 +126,7 @@ impl<R, D> Decoder<R, D> {
 
 impl<R, D> Future for Decoder<R, D>
     where R: AsyncRead,
-          D: AsyncDecode<R>
+          D: AsyncDecode
 {
     type Item = (R, D::Item, usize);
     type Error = (R, DecodeError<D::Error>);

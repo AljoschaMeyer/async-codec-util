@@ -12,7 +12,7 @@ use super::{decode, encode};
 
 /// Returns whether the given decoder returns an error of kind `UnexpectedEof` when trying to fully
 /// decode from the given reader.
-pub fn unexpected_eof_errors<R: AsyncRead, D: AsyncDecode<R>>(reader: R, dec: D) -> bool {
+pub fn unexpected_eof_errors<R: AsyncRead, D: AsyncDecode>(reader: R, dec: D) -> bool {
     match block_on(decode(reader, dec)) {
         Ok(_) => false,
         Err((_, err)) => {
@@ -26,14 +26,14 @@ pub fn unexpected_eof_errors<R: AsyncRead, D: AsyncDecode<R>>(reader: R, dec: D)
 
 /// Returns whether the given encoder returns an error of kind `WriteZero` when trying to fully
 /// encode into the given writer.
-pub fn write_zero_errors<W: AsyncWrite, C: AsyncEncode<W>>(writer: W, co: C) -> bool {
+pub fn write_zero_errors<W: AsyncWrite, C: AsyncEncode>(writer: W, co: C) -> bool {
     match block_on(encode(writer, co)) {
         Ok(_) => false,
         Err((_, err)) => err.kind() == WriteZero,
     }
 }
 
-fn test_codec_intern<R: AsyncRead, W: AsyncWrite, D: AsyncDecode<R>, C: AsyncEncode<W>>
+fn test_codec_intern<R: AsyncRead, W: AsyncWrite, D: AsyncDecode, C: AsyncEncode>
     (reader: R,
      writer: W,
      dec: D,
@@ -60,12 +60,11 @@ fn test_codec_intern<R: AsyncRead, W: AsyncWrite, D: AsyncDecode<R>, C: AsyncEnc
 
 /// Run an encoder and a decoder concurrently, returning the decoded output and whether the encoder
 /// produced as many bytes as the decoder consumed.
-pub fn test_codec<R: AsyncRead, W: AsyncWrite, D: AsyncDecode<R>, C: AsyncEncode<W>>
-    (reader: R,
-     writer: W,
-     dec: D,
-     co: C)
-     -> (D::Item, bool)
+pub fn test_codec<R: AsyncRead, W: AsyncWrite, D: AsyncDecode, C: AsyncEncode>(reader: R,
+                                                                               writer: W,
+                                                                               dec: D,
+                                                                               co: C)
+                                                                               -> (D::Item, bool)
     where D::Error: Debug
 {
     let (item, written, read) = test_codec_intern(reader, writer, dec, co);
@@ -74,7 +73,7 @@ pub fn test_codec<R: AsyncRead, W: AsyncWrite, D: AsyncDecode<R>, C: AsyncEncode
 
 /// Run an encoder and a decoder concurrently, returning the decoded output and whether the encoder
 /// produced as many bytes as it promised and as the decoder consumed.
-pub fn test_codec_len<R: AsyncRead, W: AsyncWrite, D: AsyncDecode<R>, C: AsyncEncodeLen<W>>
+pub fn test_codec_len<R: AsyncRead, W: AsyncWrite, D: AsyncDecode, C: AsyncEncodeLen>
     (reader: R,
      writer: W,
      dec: D,
