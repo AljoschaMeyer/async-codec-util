@@ -1,6 +1,6 @@
 [package]
 name = "async-codec-util"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["AljoschaMeyer <mail@aljoscha-meyer.de>"]
 description = "Utilities for working with the async-codec traits."
 repository = "https://github.com/AljoschaMeyer/async-codec-util-rs"
