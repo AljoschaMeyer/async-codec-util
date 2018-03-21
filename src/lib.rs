@@ -3,6 +3,7 @@
 #![deny(missing_docs)]
 
 extern crate async_codec;
+extern crate atm_io_utils;
 extern crate futures_core;
 extern crate futures_io;
 extern crate futures_executor;
@@ -12,8 +13,6 @@ extern crate futures_util;
 extern crate async_byteorder;
 #[cfg(test)]
 extern crate async_ringbuffer;
-#[cfg(test)]
-extern crate atm_io_utils;
 #[cfg(test)]
 #[macro_use(quickcheck)]
 extern crate quickcheck;

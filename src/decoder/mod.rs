@@ -4,6 +4,8 @@ use async_codec::AsyncDecode;
 
 mod and_then;
 pub use self::and_then::AndThen;
+mod decode_exact;
+pub use self::decode_exact::{DecodeExact, DecodeExactError};
 mod map;
 pub use self::map::Map;
 mod chain;
