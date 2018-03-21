@@ -2,6 +2,8 @@
 
 use async_codec::AsyncDecode;
 
+mod and_then;
+pub use self::and_then::AndThen;
 mod map;
 pub use self::map::Map;
 mod chain;
