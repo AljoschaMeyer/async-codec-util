@@ -1,6 +1,6 @@
 [package]
 name = "async-codec-util"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["AljoschaMeyer <mail@aljoscha-meyer.de>"]
 description = "Utilities for working with the async-codec traits."
 repository = "https://github.com/AljoschaMeyer/async-codec-util-rs"
@@ -8,14 +8,14 @@ readme = "README.md"
 license = "AGPL-3.0"
 
 [dependencies]
-async-codec = {git = "https://github.com/AljoschaMeyer/async-codec-rs"}
+async-codec = "0.3.0"
 futures-core = "0.2.0-alpha"
 futures-io = "0.2.0-alpha"
 futures-executor = "0.2.0-alpha"
 futures-util = "0.2.0-alpha"
 
 [dev-dependencies]
-async-byteorder = "0.2.0"
+# async-byteorder = { git = "https://github.com/AljoschaMeyer/async-byteorder"}
 async-ringbuffer = "0.3.0"
 atm-io-utils = { version = "0.2.4", features = ["quickcheck"] }
 quickcheck = "0.6"
